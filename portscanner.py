@@ -22,6 +22,17 @@ def portServiceMapping(syspath):
                 d[content[content.rfind('\t') + 1:]] = content[:content.find('\t')]
     return d
 
+# If user doesn't specify port, then scan the well-known ports
+def scanPorts(ports):
+    if ports == '':
+        ports = xrange(1, 1025)
+    for port in ports:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        result = sock.connect_ex((remoteServerIP, port))
+        if result == 0:
+            print "Port %d: \t Open. SERVICE NAME=%s" % (port, d.get(str(port), 'unknown'))
+        sock.close()        
+
 d = {} 
 if os.name == 'nt':
     service_file = "C:\WINDOWS\system32\drivers\etc\services"
@@ -35,6 +46,8 @@ elif os.name == 'posix':
 # Ask for input
 remoteServer = raw_input("Enter a remote host to scan: ")
 remoteServerIP = socket.gethostbyname(remoteServer)
+scanPort = raw_input("Enter the port number you want to scan (otherwise, the program will scan the well-known ports 1 - 1024): ")
+ports = map(int, scanPort.split(' '))
 
 # print a nice banner with information on which host we are about to scan
 print "-" * 60
@@ -44,14 +57,9 @@ print "-" * 60
 # Check what time the scan started
 t1 = datetime.now()
 
-# Scan well-known ports (reserved ports)
+# Scan ports
 try:
-    for port in xrange(1, 1025):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        result = sock.connect_ex((remoteServerIP, port))
-        if result == 0:
-            print "Port %d: \t Open. SERVICE NAME=%s" % (port, d.get(str(port), 'unknown'))
-        sock.close()
+    scanPorts(ports)
 except KeyboardInterrupt:
     print "Press Ctrl-C"
     sys.exit()
