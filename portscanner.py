@@ -24,13 +24,13 @@ def portServiceMapping(syspath):
 
 # If user doesn't specify port, then scan the well-known ports
 def scanPorts(ports):
-    if ports == '':
-        ports = xrange(1, 1025)
     for port in ports:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         result = sock.connect_ex((remoteServerIP, port))
         if result == 0:
-            print "Port %d: \t Open. SERVICE NAME=%s" % (port, d.get(str(port), 'unknown'))
+            print "Port %d: \t Open. \t SERVICE NAME=%s" % (port, d.get(str(port), 'unknown'))
+        else:
+            print "Port %d: \t Closed" % port      
         sock.close()        
 
 d = {} 
@@ -47,7 +47,10 @@ elif os.name == 'posix':
 remoteServer = raw_input("Enter a remote host to scan: ")
 remoteServerIP = socket.gethostbyname(remoteServer)
 scanPort = raw_input("Enter the port number you want to scan (otherwise, the program will scan the well-known ports 1 - 1024): ")
-ports = map(int, scanPort.split(' '))
+if scanPort == '':
+    ports = xrange(1, 1025)
+else:
+    ports = map(int, scanPort.split(' '))
 
 # print a nice banner with information on which host we are about to scan
 print "-" * 60
