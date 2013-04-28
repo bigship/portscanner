@@ -9,7 +9,7 @@ from datetime import datetime
 
 # port-service mapping.
 # locate the sysfile and parse it. use port number as a key
-def port_service_mapping(syspath):
+def portServiceMapping(syspath):
     d = {}
     with open(syspath, 'r') as f:
         for line in f:
@@ -25,11 +25,11 @@ def port_service_mapping(syspath):
 d = {} 
 if os.name == 'nt':
     service_file = "C:\WINDOWS\system32\drivers\etc\services"
-    d = port_service_mapping(service_file)
+    d = portServiceMapping(service_file)
     subprocess.call('cls', shell=True)
 elif os.name == 'posix':
     service_file = "/etc/services"
-    d = port_service_mapping(service_file)
+    d = portServiceMapping(service_file)
     subprocess.call('clear', shell=True)
 
 # Ask for input
