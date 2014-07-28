@@ -1,79 +1,47 @@
-# -*- coding: utf-8 -*-
 #!/usr/bin/env python
+# -*- encoding: utf-8 -*-
 
+import argparse
 import socket
-import subprocess
 import sys
-import os
-from datetime import datetime
 
-# port-service mapping.
-# locate the sysfile and parse it. use port number as a key
-def portServiceMapping(syspath):
-    d = {}
-    with open(syspath, 'r') as f:
-        for line in f:
-            if line.startswith('#'):
-                continue
-            content = line.split('/')[0]
-            if os.name == 'nt':
-                d[content[content.rfind(' ') + 1:]] = content[:content.find(' ')]
-            elif os.name == 'posix':
-                d[content[content.rfind('\t') + 1:]] = content[:content.find('\t')]
-    return d
-
-# If user doesn't specify port, then scan the well-known ports
-def scanPorts(ports):
-    for port in ports:
+def scan_ports(host, start_port, end_port):
+    """ Scan remote hosts """
+    #Create socket
+    try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        result = sock.connect_ex((remoteServerIP, port))
-        if result == 0:
-            print "Port %d: \t Open. \t SERVICE NAME=%s" % (port, d.get(str(port), 'unknown'))
-        else:
-            print "Port %d: \t Closed" % port      
-        sock.close()        
+    except socket.error, err_msg:
+        print 'Socket creation failed. Error code: ' + str(err_msg[0]) + \
+        ' Error message: ' + err_msg[1]
+        sys.exit()
 
-d = {} 
-if os.name == 'nt':
-    service_file = "C:\WINDOWS\system32\drivers\etc\services"
-    d = portServiceMapping(service_file)
-    subprocess.call('cls', shell=True)
-elif os.name == 'posix':
-    service_file = "/etc/services"
-    d = portServiceMapping(service_file)
-    subprocess.call('clear', shell=True)
+    #Get IP of remote host
+    try:
+        remote_ip = socket.gethostbyname(host)
+    except socket.error, error_msg:
+        print error_msg
+        sys.exit()
 
-# Ask for input
-remoteServer = raw_input("Enter a remote host to scan: ")
-remoteServerIP = socket.gethostbyname(remoteServer)
-scanPort = raw_input("Enter the port number you want to scan (otherwise, the program will scan the well-known ports 1 - 1024): ")
-if scanPort == '':
-    ports = xrange(1, 1025)
-else:
-    ports = map(int, scanPort.split(' '))
+    #Scan ports
+    print "Start scanning... "
+    end_port += 1
+    for port in range(start_port, end_port):
+        try:
+            ret = sock.connect_ex((remote_ip, port))
+            if ret == 0:
+                print 'Port ' + str(port) + ' is open'
+            sock.close()
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        except socket.error:
+            pass
 
-# print a nice banner with information on which host we are about to scan
-print "-" * 60
-print "Please wait, scanning remote host", remoteServerIP
-print "-" * 60
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Remote Port Scanner')
+    parser.add_argument('--host', action="store", dest="host", default='localhost')
+    parser.add_argument('--start-port', action="store", dest="start_port", default=1, type=int)
+    parser.add_argument('--end-port', action="store", dest="end_port", default=100, type=int)
 
-# Check what time the scan started
-t1 = datetime.now()
-
-# Scan ports
-try:
-    scanPorts(ports)
-except KeyboardInterrupt:
-    print "Press Ctrl-C"
-    sys.exit()
-except socket.gaierror:
-    print "Hostname could not be resolved. Exiting"
-    sys.exit()
-except socket.error:
-    print "Couldn't connect to server"
-    sys.exit()
-
-t2 = datetime.now()
-total = t2 - t1
-
-print 'Scanning completed in: ', total
+    #parse arguments
+    given_args = parser.parse_args()
+    host, start_port, end_port = given_args.host, given_args.start_port, given_args.end_port
+    scan_ports(host, start_port, end_port)
